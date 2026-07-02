@@ -1,3 +1,28 @@
+---
+mol_project:
+  name: molplot
+  stage: experimental
+  language: mixed
+  build:
+    install: npm install && pip install -e './python[dev]'
+    check: npm run check:presets && npx biome check && npm run typecheck
+    test: npm test
+    test_single: pytest {path} -v
+    coverage: "cd python && pytest --cov=molplot tests"
+  arch:
+    style: monorepo
+    rules_section: "Critical invariants"
+  doc:
+    style: jsdoc-tiered
+  science:
+    required: false
+  ci:
+    config: .github/workflows/ci.yml
+    local: "npm run check:presets && npx biome check && npm run typecheck && npm test"
+  notes_path: .claude/notes/notes.md
+  specs_path: .claude/specs/
+---
+
 # CLAUDE.md
 
 ## What this repo is
