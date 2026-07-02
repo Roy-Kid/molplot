@@ -1,0 +1,23 @@
+# Node
+node_modules/
+dist/
+.rslib/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.benchmarks/
+
+# Docs
+site/
+
+# OS / editors
+.DS_Store
+*.log

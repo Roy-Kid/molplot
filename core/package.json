@@ -1,0 +1,65 @@
+{
+  "name": "@molcrafts/molplot",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MolCrafts/molplot.git",
+    "directory": "core"
+  },
+  "homepage": "https://github.com/MolCrafts/molplot#readme",
+  "bugs": {
+    "url": "https://github.com/MolCrafts/molplot/issues"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "typecheck": "tsc --noEmit",
+    "test": "rstest run",
+    "test:watch": "rstest watch",
+    "release:check": "npm run build && npm run test && npm_config_cache=/tmp/npm-cache npm pack --dry-run"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^2.0.8",
+    "@rslib/core": "^0.22.0",
+    "@rstest/core": "^0.10.3",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "vega": "^5.30.0",
+    "vega-lite": "^5.21.0",
+    "vega-embed": "^6.29.0"
+  },
+  "peerDependencies": {
+    "vega": "^5.30.0",
+    "vega-lite": "^5.21.0",
+    "vega-embed": "^6.29.0"
+  },
+  "peerDependenciesMeta": {
+    "vega": {
+      "optional": true
+    },
+    "vega-lite": {
+      "optional": true
+    },
+    "vega-embed": {
+      "optional": true
+    }
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "author": "Roy Kid",
+  "license": "BSD-3-Clause",
+  "description": "MolPlot: Vega-Lite scientific charting primitives with a unified, matplotlib-portable preset"
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "./preset.schema.json",
+  "name": "molplot-paper",
+  "label": "MolPlot Paper",
+  "description": "Publication variant of the MolPlot preset — serif type, tighter figure, high DPI, layered on scienceplots' 'nature' base. Same categorical palette as the default so web and paper figures stay colour-consistent.",
+  "sciencePlotsBase": ["science", "nature", "no-latex"],
+  "typography": {
+    "family": "Times New Roman, Times, Nimbus Roman, serif",
+    "familyMono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+    "familySerif": "Times New Roman, Times, Nimbus Roman, serif",
+    "size": {
+      "base": 9,
+      "title": 10,
+      "label": 9,
+      "tick": 8,
+      "legend": 8
+    }
+  },
+  "palette": {
+    "categorical": [
+      "#1f77b4",
+      "#ff7f0e",
+      "#2ca02c",
+      "#d62728",
+      "#9467bd",
+      "#8c564b",
+      "#e377c2",
+      "#7f7f7f",
+      "#bcbd22",
+      "#17becf",
+      "#aec7e8",
+      "#ffbb78",
+      "#98df8a",
+      "#ff9896",
+      "#c5b0d5",
+      "#c49c94",
+      "#f7b6d2",
+      "#c7c7c7",
+      "#dbdb8d",
+      "#9edae5"
+    ],
+    "defaultColor": "#1f77b4",
+    "sequential": "viridis",
+    "diverging": "RdBu"
+  },
+  "geometry": {
+    "lineWidth": 1,
+    "markerSize": 4,
+    "barGap": 0.2,
+    "figSize": [3.3, 2.5],
+    "dpi": 600,
+    "margin": { "l": 44, "r": 8, "t": 8, "b": 40 }
+  },
+  "modes": {
+    "light": {
+      "background": "transparent",
+      "figureFace": "#ffffff",
+      "foreground": "#000000",
+      "gridColor": "rgba(0,0,0,0.10)",
+      "gridColorSolid": "#cccccc",
+      "tickColor": "#000000",
+      "highlightRing": "#000000"
+    },
+    "dark": {
+      "background": "transparent",
+      "figureFace": "#111113",
+      "foreground": "#e5e5e5",
+      "gridColor": "rgba(255,255,255,0.10)",
+      "gridColorSolid": "#444444",
+      "tickColor": "#e5e5e5",
+      "highlightRing": "#ffffff"
+    }
+  }
+}

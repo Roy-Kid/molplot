@@ -1,0 +1,49 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/.venv",
+      "!**/.rslib",
+      "!**/out",
+      "!**/site",
+      "!**/*.css",
+      "!**/presets/generated.ts"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "useNodejsImportProtocol": "off",
+        "noNonNullAssertion": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noNonNullAssertedOptionalChain": "warn"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "warn",
+        "noBannedTypes": "warn",
+        "noForEach": "warn"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/tests/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
+}

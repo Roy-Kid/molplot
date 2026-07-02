@@ -1,0 +1,34 @@
+{
+  "name": "molplot",
+  "version": "0.1.0",
+  "description": "MolPlot — Vega-Lite scientific charting with a unified, matplotlib-portable preset",
+  "author": "Roy Kid",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "workspaces": [
+    "core",
+    "page"
+  ],
+  "scripts": {
+    "build:presets": "node scripts/build-presets.mjs",
+    "check:presets": "node scripts/build-presets.mjs --check",
+    "build:core": "npm run build -w core",
+    "build:page": "npm run build -w page",
+    "build:all": "npm run build:core && npm run build:page",
+    "dev:page": "npm run dev -w page",
+    "typecheck:core": "npm run typecheck -w core",
+    "typecheck:page": "npm run typecheck -w page",
+    "typecheck": "npm run typecheck:core && npm run typecheck:page",
+    "test:core": "npm run test -w core",
+    "test:python": "cd python && python3 -m pytest tests",
+    "test": "npm run test:core && npm run test:python",
+    "release:core:check": "npm run release:check -w core",
+    "lint": "biome check --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@rsbuild/core": "^2.0.8",
+    "@rslib/core": "^0.22.0"
+  },
+  "packageManager": "npm@11.16.0"
+}

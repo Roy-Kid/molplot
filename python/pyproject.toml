@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "molcrafts-molplot"
+version = "0.1.0"
+description = "Unified scientific charting: scienceplots + a matplotlib-portable Vega-Lite preset"
+readme = "README.md"
+license = "BSD-3-Clause"
+requires-python = ">=3.10"
+authors = [{ name = "MolCrafts Team" }]
+keywords = ["matplotlib", "scienceplots", "vega-lite", "charting", "visualization", "science"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "matplotlib>=3.6",
+    "scienceplots>=2.1",
+    "numpy",
+]
+
+[project.optional-dependencies]
+convert = ["vl-convert-python>=1.6"]
+dev = [
+    "build>=1.0",
+    "hatchling",
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[project.urls]
+Homepage = "https://github.com/MolCrafts/molplot"
+Repository = "https://github.com/MolCrafts/molplot"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/molplot"]
+# The generated *.mplstyle assets live under the package and ship as data files.
+artifacts = ["src/molplot/presets/*.mplstyle"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/README.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

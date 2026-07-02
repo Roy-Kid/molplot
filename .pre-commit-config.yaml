@@ -1,0 +1,39 @@
+# Local hooks mirror .github/workflows/ci.yml job-for-job so a green pre-push
+# means a green CI. See CLAUDE.md "Build & test".
+repos:
+  - repo: local
+    hooks:
+      - id: presets-drift
+        name: presets in sync (build-presets --check)
+        entry: npm run check:presets
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: biome
+        name: biome check
+        entry: npx biome check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: typecheck
+        name: tsc typecheck
+        entry: npm run typecheck
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: test-core
+        name: core tests (rstest)
+        entry: npm run test:core
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: test-python
+        name: python tests (pytest)
+        entry: bash -c 'cd python && python3 -m pytest -q'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

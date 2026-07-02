@@ -1,0 +1,33 @@
+docs_dir = "docs"
+site_dir = "site"
+
+[site]
+name = "MolPlot"
+description = "Unified scientific charting: Vega-Lite on the web, scienceplots on paper, one preset."
+
+[theme]
+palette = "indigo"
+
+[[nav]]
+title = "Home"
+path = "index.md"
+
+[[nav]]
+title = "Getting Started"
+path = "getting-started/index.md"
+
+[[nav]]
+title = "Unified Preset"
+path = "getting-started/preset.md"
+
+[[nav.children]]
+title = "Web (Vega-Lite)"
+path = "getting-started/web.md"
+
+[[nav.children]]
+title = "Python (scienceplots)"
+path = "getting-started/python.md"
+
+[[nav]]
+title = "API"
+path = "api/index.md"

@@ -1,0 +1,26 @@
+{
+  "name": "page",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@molcrafts/molplot": "*",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "vega": "^5.30.0",
+    "vega-lite": "^5.21.0",
+    "vega-embed": "^6.29.0"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^2.0.8",
+    "@rsbuild/plugin-react": "^2.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^6.0.3"
+  }
+}

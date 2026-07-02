@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://molcrafts.github.io/molplot/preset.schema.json",
+  "title": "MolPlot preset",
+  "description": "Design tokens for a MolPlot preset. One canonical JSON per named preset drives both the TypeScript (Observable Plot + D3) and Python (scienceplots/matplotlib) renderers via scripts/build-presets.mjs.",
+  "type": "object",
+  "required": ["name", "typography", "palette", "geometry", "modes"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Stable machine name; also the key used by molplot.use(name) / resolvePreset(name)."
+    },
+    "label": { "type": "string", "description": "Human-facing display name." },
+    "description": { "type": "string" },
+    "sciencePlotsBase": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "scienceplots style names layered *under* the molplot overlay on the Python side (e.g. [\"science\", \"no-latex\"]). Ignored by the web renderer."
+    },
+    "typography": {
+      "type": "object",
+      "required": ["family", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "family": { "type": "string" },
+        "familyMono": { "type": "string" },
+        "familySerif": { "type": "string" },
+        "size": {
+          "type": "object",
+          "required": ["base", "title", "label", "tick", "legend"],
+          "additionalProperties": false,
+          "properties": {
+            "base": { "type": "number" },
+            "title": { "type": "number" },
+            "label": { "type": "number" },
+            "tick": { "type": "number" },
+            "legend": { "type": "number" }
+          }
+        }
+      }
+    },
+    "palette": {
+      "type": "object",
+      "required": ["categorical", "defaultColor"],
+      "additionalProperties": false,
+      "properties": {
+        "categorical": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "minItems": 1
+        },
+        "defaultColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "sequential": { "type": "string", "description": "Named colour scheme shared by d3 and matplotlib (e.g. 'viridis')." },
+        "diverging": { "type": "string" }
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "required": ["lineWidth", "markerSize", "margin"],
+      "additionalProperties": false,
+      "properties": {
+        "lineWidth": { "type": "number" },
+        "markerSize": { "type": "number" },
+        "barGap": { "type": "number" },
+        "figSize": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Matplotlib figure size in inches [w, h]. Advisory for the web renderer."
+        },
+        "dpi": { "type": "number" },
+        "margin": {
+          "type": "object",
+          "required": ["l", "r", "t", "b"],
+          "additionalProperties": false,
+          "properties": {
+            "l": { "type": "number" },
+            "r": { "type": "number" },
+            "t": { "type": "number" },
+            "b": { "type": "number" }
+          }
+        }
+      }
+    },
+    "modes": {
+      "type": "object",
+      "required": ["light", "dark"],
+      "additionalProperties": false,
+      "properties": {
+        "light": { "$ref": "#/definitions/mode" },
+        "dark": { "$ref": "#/definitions/mode" }
+      }
+    }
+  },
+  "definitions": {
+    "mode": {
+      "type": "object",
+      "required": ["background", "foreground", "gridColor", "tickColor"],
+      "additionalProperties": false,
+      "properties": {
+        "background": { "type": "string" },
+        "figureFace": { "type": "string" },
+        "foreground": { "type": "string" },
+        "gridColor": { "type": "string" },
+        "gridColorSolid": { "type": "string" },
+        "tickColor": { "type": "string" },
+        "highlightRing": { "type": "string" }
+      }
+    }
+  }
+}
