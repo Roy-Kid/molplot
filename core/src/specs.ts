@@ -83,6 +83,9 @@ export function lineSpec(
     scale: { domain: keys, range: colors },
     legend: config.showLegend ? { title: null } : null,
   };
+  // Every layer reuses the *same* colour encoding: Vega-Lite merges same-field
+  // colour legends into one, so the legend setting must be identical across
+  // layers (differing `disable` flags would conflict).
   const xy = {
     x: {
       field: "x",
@@ -98,6 +101,40 @@ export function lineSpec(
     },
   };
 
+  // Encode stroke width / opacity per series only when they actually differ;
+  // otherwise set them as constant mark props. Encoding a size/opacity channel
+  // on the same field as `color` makes Vega-Lite merge legends and warn.
+  const uniformWidth = widths.every((w) => w === widths[0]);
+  const uniformOpacity = opacities.every((o) => o === opacities[0]);
+  const lineMark: Record<string, unknown> = {
+    type: "line",
+    interpolate: "linear",
+    clip: true,
+  };
+  if (uniformWidth)
+    lineMark.strokeWidth = widths[0] ?? theme.geometry.lineWidth;
+  if (uniformOpacity) lineMark.opacity = opacities[0] ?? 1;
+  const lineEncoding: Record<string, unknown> = {
+    color: colorEnc,
+    detail: { field: "s", type: "nominal" },
+  };
+  if (!uniformWidth) {
+    lineEncoding.strokeWidth = {
+      field: "key",
+      type: "nominal",
+      scale: { domain: keys, range: widths },
+      legend: null,
+    };
+  }
+  if (!uniformOpacity) {
+    lineEncoding.opacity = {
+      field: "key",
+      type: "nominal",
+      scale: { domain: keys, range: opacities },
+      legend: null,
+    };
+  }
+
   return clean({
     $schema: VL_SCHEMA,
     config: vegaConfig(theme),
@@ -108,23 +145,8 @@ export function lineSpec(
     encoding: xy,
     layer: [
       {
-        mark: { type: "line", interpolate: "linear", clip: true },
-        encoding: {
-          color: colorEnc,
-          detail: { field: "s", type: "nominal" },
-          strokeWidth: {
-            field: "key",
-            type: "nominal",
-            scale: { domain: keys, range: widths },
-            legend: null,
-          },
-          opacity: {
-            field: "key",
-            type: "nominal",
-            scale: { domain: keys, range: opacities },
-            legend: null,
-          },
-        },
+        mark: lineMark,
+        encoding: lineEncoding,
       },
       {
         transform: [{ filter: { field: "key", oneOf: markerKeys } }],

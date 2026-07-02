@@ -90,6 +90,25 @@ def line_spec(
         "scale": {"domain": keys, "range": colors},
         "legend": {"title": None} if show_legend else None,
     }
+    # Every layer reuses the *same* colour encoding: Vega-Lite merges same-field
+    # colour legends into one, so the legend setting must match across layers.
+
+    # Encode width / opacity per series only when they differ; else set them as
+    # constant mark props (a size/opacity channel on the same field as `color`
+    # makes Vega-Lite merge legends and warn).
+    uniform_width = all(w == widths[0] for w in widths) if widths else True
+    uniform_opacity = all(o == opacities[0] for o in opacities) if opacities else True
+    line_mark: dict[str, Any] = {"type": "line", "interpolate": "linear", "clip": True}
+    if uniform_width:
+        line_mark["strokeWidth"] = widths[0] if widths else theme["geometry"]["lineWidth"]
+    if uniform_opacity:
+        line_mark["opacity"] = opacities[0] if opacities else 1
+    line_encoding: dict[str, Any] = {"color": color_enc, "detail": {"field": "s", "type": "nominal"}}
+    if not uniform_width:
+        line_encoding["strokeWidth"] = {"field": "key", "type": "nominal", "scale": {"domain": keys, "range": widths}, "legend": None}
+    if not uniform_opacity:
+        line_encoding["opacity"] = {"field": "key", "type": "nominal", "scale": {"domain": keys, "range": opacities}, "legend": None}
+
     spec = _base(preset, mode, width, height)
     spec.update(
         {
@@ -99,15 +118,7 @@ def line_spec(
                 "y": {"field": "y", "type": "quantitative", "axis": _axis(y_label), "scale": _scale(y_log, y_domain)},
             },
             "layer": [
-                {
-                    "mark": {"type": "line", "interpolate": "linear", "clip": True},
-                    "encoding": {
-                        "color": color_enc,
-                        "detail": {"field": "s", "type": "nominal"},
-                        "strokeWidth": {"field": "key", "type": "nominal", "scale": {"domain": keys, "range": widths}, "legend": None},
-                        "opacity": {"field": "key", "type": "nominal", "scale": {"domain": keys, "range": opacities}, "legend": None},
-                    },
-                },
+                {"mark": line_mark, "encoding": line_encoding},
                 {
                     "transform": [{"filter": {"field": "key", "oneOf": marker_keys}}],
                     "mark": {"type": "point", "filled": True, "size": theme["geometry"]["markerSize"] ** 2},
