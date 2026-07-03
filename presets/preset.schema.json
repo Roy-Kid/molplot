@@ -53,7 +53,10 @@
           "minItems": 1
         },
         "defaultColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
-        "sequential": { "type": "string", "description": "Named colour scheme shared by d3 and matplotlib (e.g. 'viridis')." },
+        "sequential": {
+          "type": "string",
+          "description": "Named colour scheme shared by d3 and matplotlib (e.g. 'viridis')."
+        },
         "diverging": { "type": "string" }
       }
     },
