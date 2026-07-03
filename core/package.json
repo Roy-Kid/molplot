@@ -40,22 +40,6 @@
     "vega-lite": "^5.21.0",
     "vega-embed": "^6.29.0"
   },
-  "peerDependencies": {
-    "vega": "^5.30.0",
-    "vega-lite": "^5.21.0",
-    "vega-embed": "^6.29.0"
-  },
-  "peerDependenciesMeta": {
-    "vega": {
-      "optional": true
-    },
-    "vega-lite": {
-      "optional": true
-    },
-    "vega-embed": {
-      "optional": true
-    }
-  },
   "directories": {
     "test": "tests"
   },
