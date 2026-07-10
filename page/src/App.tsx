@@ -9,6 +9,15 @@ import { useEffect, useRef, useState } from "react";
 type Kind = "line" | "scatter" | "bar" | "gantt";
 type Disposable = { dispose(): void };
 
+/** Only continuous scales can be bound to the pan/zoom selection, so a chart
+ * with a category (band) axis zooms along one axis only. */
+const AXES_HINT: Record<Kind, string> = {
+  line: "zooms x + y",
+  scatter: "zooms x + y",
+  bar: "zooms y — the category axis is a band scale",
+  gantt: "zooms time — the task axis is a band scale",
+};
+
 function build(kind: Kind, el: HTMLElement, preset: string): Disposable {
   switch (kind) {
     case "line": {
@@ -130,11 +139,19 @@ function ChartCard({ kind, preset }: { kind: Kind; preset: string }) {
         padding: 12,
       }}
     >
-      <h3
-        style={{ margin: "0 0 8px", fontSize: 13, textTransform: "capitalize" }}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 8,
+          margin: "0 0 8px",
+        }}
       >
-        {kind}
-      </h3>
+        <h3 style={{ margin: 0, fontSize: 13, textTransform: "capitalize" }}>
+          {kind}
+        </h3>
+        <span style={{ opacity: 0.5, fontSize: 11 }}>{AXES_HINT[kind]}</span>
+      </div>
       <div ref={ref} style={{ height: 260, width: "100%" }} />
     </div>
   );
@@ -171,6 +188,18 @@ export function App() {
         <span style={{ opacity: 0.6, fontSize: 12 }}>
           Vega-Lite charts, unified preset — the same specs render to matplotlib
           in Python.
+        </span>
+        <span
+          style={{
+            flexBasis: "100%",
+            opacity: 0.6,
+            fontSize: 12,
+            marginTop: 4,
+          }}
+        >
+          <b>wheel over an axis</b> to zoom that axis · <b>drag</b> to pan ·{" "}
+          <b>shift + wheel</b> to zoom both · <b>double click</b> to reset. A
+          wheel over the plot itself is left alone so the page still scrolls.
         </span>
         <div
           style={{
