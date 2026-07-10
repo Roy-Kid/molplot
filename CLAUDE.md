@@ -57,7 +57,7 @@ on Vega-Lite so a single spec is portable between the browser and matplotlib.
 ```bash
 npm install
 npm run build:presets    # regenerate generated preset artifacts from presets/*.json
-npm run dev:page         # demo gallery at localhost:3000
+npm run dev              # demo gallery at localhost:3000 (alias of dev:page)
 npm run build:core       # rslib → core/dist (npm publish artifact)
 npm run typecheck        # core + page
 npm test                 # core (rstest, node) + python (pytest)
