@@ -3,6 +3,9 @@ name: "Release: Python (PyPI)"
 on:
   push:
     tags: ["v*"]
+  # Manual re-trigger to republish after a workflow fix, without re-tagging
+  # (same rationale as release-core.yml's workflow_dispatch).
+  workflow_dispatch:
 
 jobs:
   publish:
