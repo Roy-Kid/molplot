@@ -29,12 +29,9 @@ nav = [
 ]
 
 # Markdown extensions. Declaring this section REPLACES Zensical's built-in
-# default set (it is not merged), so the full default set is reproduced verbatim
-# below — the only addition is the `molplot` custom fence (last custom_fence
-# entry), which compiles a ```molplot block to a <molplot-chart> element via
-# molplot.mdx.molplot_fence (the Python package must be importable at build
-# time; see the `doc` group in python/pyproject.toml). Keep this in sync with
-# Zensical's defaults on upgrade.
+# default set (it is not merged), so the full default set is reproduced
+# verbatim. The ```molplot fence is owned by molcrafts-zensical-theme — not
+# this package.
 [project.markdown_extensions]
 abbr = {}
 admonition = {}
@@ -65,7 +62,7 @@ tasklist = { custom_checkbox = true }
 [project.markdown_extensions.pymdownx.superfences]
 custom_fences = [
   { name = "mermaid", class = "mermaid" },
-  { name = "molplot", class = "molplot", format = "molplot.mdx.molplot_fence", validator = "molplot.mdx.molplot_validator" },
+  { name = "molplot", class = "molplot", format = "molcrafts_zensical_theme.formatters.molplot_fence", validator = "molcrafts_zensical_theme.formatters.molplot_validator" },
 ]
 
 # Shared MolCrafts theme (github.com/MolCrafts/molcrafts-zensical-theme). Provides

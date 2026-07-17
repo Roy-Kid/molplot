@@ -53,9 +53,11 @@ Pass options in the fence header as **quoted** `key="value"` pairs:
 |--------|--------|---------|
 | `preset` | `molplot`, `molplot-paper` | `molplot` |
 | `theme` | `auto`, `light`, `dark` | `auto` (tracks the site's dark mode) |
+| `width` | CSS width (`24rem`, `32rem`, `100%`) | `28rem` maximum |
+| `aspect` | Ratio (`4:3`, `16:9`, `1:1`) | `4:3` |
 
 ````markdown
-```molplot preset="molplot-paper" theme="light"
+```molplot preset="molplot-paper" theme="light" width="32rem" aspect="4:3"
 mark: bar
 data:
   values:
@@ -119,20 +121,19 @@ Two small additions to `zensical.toml` — already configured in this repo:
     Loading it registers `<molplot-chart>` cheaply; the ~350 KB Vega runtime is a
     lazy chunk that downloads only when a chart actually mounts.
 
-2. **Register the fence** as a `pymdownx.superfences` custom fence pointing at the
-   formatter shipped with the Python package (`molplot.mdx`):
+2. **Register the fence** as a `pymdownx.superfences` custom fence pointing at
+   the formatter in **`molcrafts-zensical-theme`** (not this Python package):
 
     ```toml
     [[project.markdown_extensions.pymdownx.superfences.custom_fences]]
     name = "molplot"
     class = "molplot"
-    format = "molplot.mdx.molplot_fence"
-    validator = "molplot.mdx.molplot_validator"
+    format = "molcrafts_zensical_theme.formatters.molplot_fence"
+    validator = "molcrafts_zensical_theme.formatters.molplot_validator"
     ```
 
     The formatter runs at build time and is a pure text transform: it turns the
     fenced Vega-Lite spec into the `<molplot-chart>` element above — it does not
-    draw the chart. Because declaring `markdown_extensions` replaces Zensical's
-    defaults, this repo's `zensical.toml` re-lists the full default set alongside
-    this fence. The `molcrafts-molplot` package must be importable at build time
-    (it is in the `doc` dependency group).
+    draw the chart. Install `molcrafts-zensical-theme>=0.2.2` for the fence;
+    this package (`molcrafts-molplot`) is only the paper / Python charting API.
+

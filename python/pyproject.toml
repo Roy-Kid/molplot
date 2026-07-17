@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "molcrafts-molplot"
-version = "0.1.2"
+version = "0.1.3"
 description = "Unified scientific charting: scienceplots + a matplotlib-portable Vega-Lite preset"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -29,31 +29,20 @@ dependencies = [
 
 [project.optional-dependencies]
 convert = ["vl-convert-python>=1.6"]
-# YAML authoring for the `molplot` Markdown fence formatter (molplot.mdx).
-mdx = ["pyyaml>=6.0"]
 dev = [
     "build>=1.0",
     "hatchling",
     "pytest>=7.0",
     "pytest-cov",
-    # mdx's runtime dep, so test_mdx.py can exercise the YAML path.
-    "pyyaml>=6.0",
 ]
 
-# Docs are built with Zensical from the single site config at ../zensical.toml
-# (the docs tree lives under ../docs/). That config sets `theme.name =
-# "molcrafts"` — the shared MolCrafts brand extension, on PyPI — so the docs
-# build is reproducible from this group alone.
+# Docs: Markdown fences live in the MolCrafts theme, not this package.
+# Paper charting remains this package (`import molplot`).
 [dependency-groups]
 doc = [
     "zensical>=0.0.45",
-    # The molcrafts docs theme (zensical.toml sets `theme.name = "molcrafts"`).
-    "molcrafts-zensical-theme>=0.1.0",
-    # This package itself, so the `molplot` custom-fence formatter
-    # (molplot.mdx.molplot_fence) is importable while the site compiles.
+    "molcrafts-zensical-theme>=0.2.2",
     "molcrafts-molplot",
-    # YAML authoring for the `molplot` fenced block (molplot.mdx).
-    "pyyaml>=6.0",
 ]
 
 [project.urls]
@@ -62,7 +51,6 @@ Repository = "https://github.com/MolCrafts/molplot"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/molplot"]
-# The generated *.mplstyle assets live under the package and ship as data files.
 artifacts = ["src/molplot/presets/*.mplstyle"]
 
 [tool.hatch.build.targets.sdist]
