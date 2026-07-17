@@ -31,9 +31,12 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # Python tests run on commit *and* push so they cannot be skipped by
+      # forgetting a pre-push install. Resolve a Python that has pytest:
+      # VIRTUAL_ENV → repo .venv → python that can import pytest.
       - id: test-python
         name: python tests (pytest)
-        entry: bash -c 'cd python && python3 -m pytest -q'
+        entry: bash scripts/run-python-tests.sh
         language: system
         pass_filenames: false
-        stages: [pre-push]
+        stages: [pre-commit, pre-push]

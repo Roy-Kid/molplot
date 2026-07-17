@@ -1,7 +1,7 @@
 {
   "name": "molplot",
-  "version": "0.1.2",
-  "description": "MolPlot — Vega-Lite scientific charting with a unified, matplotlib-portable preset",
+  "version": "0.1.3",
+  "description": "MolPlot \u2014 Vega-Lite scientific charting with a unified, matplotlib-portable preset",
   "author": "Roy Kid",
   "license": "BSD-3-Clause",
   "private": true,
@@ -21,7 +21,7 @@
     "typecheck:page": "npm run typecheck -w page",
     "typecheck": "npm run typecheck:core && npm run typecheck:page",
     "test:core": "npm run test -w core",
-    "test:python": "cd python && python3 -m pytest tests",
+    "test:python": "bash scripts/run-python-tests.sh",
     "test": "npm run test:core && npm run test:python",
     "release:core:check": "npm run release:check -w core",
     "lint": "biome check --write"
