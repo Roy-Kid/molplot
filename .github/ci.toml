@@ -1,0 +1,59 @@
+# What molplot checks. The same commands run in the git hooks
+# (`molci check --stage pre-commit|pre-push`) and in .github/workflows/ci.yml.
+# Reference: https://github.com/MolCrafts/molcrafts-ci#githubcitoml
+
+[tools]
+node = ".nvmrc"
+
+# The single sources of truth (presets/*.json, schema/editor/model.json) match
+# their committed generated files, and biome is clean.
+[check.lint]
+stage = "pre-commit"
+run = [
+  "npm ci --prefer-offline --no-audit --no-fund",
+  "npm run check:presets",
+  "npm run check:schema",
+  "npm run check:biome",
+]
+
+[check.typecheck]
+run = [
+  "npm ci --prefer-offline --no-audit --no-fund",
+  "npm run typecheck",
+]
+
+[check.test-core]
+run = [
+  "npm ci --prefer-offline --no-audit --no-fund",
+  "npm run test:core",
+  "npm run test:page",
+  "npm run build:core",
+]
+
+[check.test-python]
+python = "3.12"
+# Isolated: a project run would resolve the `doc` group, which needs Python 3.12+.
+run = "uv run --directory python --isolated --no-project --with-editable '.[dev]' python -m pytest -q --junitxml=../.ci-out/junit.xml --cov=molplot --cov-branch --cov-report=json:../.ci-out/coverage.json"
+junit = ".ci-out/junit.xml"
+coverage = ".ci-out/coverage.json"
+
+# The wheel and sdist a release would upload.
+[check.package]
+python = "3.12"
+run = [
+  "rm -rf python/dist",
+  "uv build python --no-sources",
+  "uvx twine check --strict python/dist/*",
+]
+
+# The site from the source-built <molplot-chart>, never the CDN.
+[check.docs]
+python = "3.12"
+run = [
+  "npm ci --prefer-offline --no-audit --no-fund",
+  "uv run --no-project --with 'zensical>=0.0.53' --with 'molcrafts-zensical-theme>=0.3.0' npm run docs:build",
+  "test -f docs/assets/molplot/elements.js",
+  "test -f site/assets/molplot/elements.js",
+  "grep -q 'src=\"./assets/molplot/elements.js\"' site/index.html",
+  "! grep -R -E '<script[^>]+src=\"https://cdn.jsdelivr.net/npm/@molcrafts/molplot' site --include='*.html'",
+]

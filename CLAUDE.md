@@ -21,8 +21,8 @@ mol_project:
   science:
     required: false
   ci:
-    config: .github/workflows/ci.yml
-    local: "npm run check:presets && npm run check:schema && npm run check:biome && npm run typecheck && npm test"
+    config: .github/ci.toml
+    local: "uvx --from git+https://github.com/MolCrafts/molcrafts-ci@master molci check"
   notes_path: .claude/notes/notes.md
   specs_path: .claude/specs/
 ---
@@ -167,9 +167,16 @@ Each package's `dist/` is for publish only.
 
 ## Release
 
+CI is the shared MolCrafts workflow (`MolCrafts/molcrafts-ci`): every check
+lives in `.github/ci.toml`, and the git hooks (`.pre-commit-config.yaml`) run
+the same checks with `molci check --stage pre-commit|pre-push`.
+
 Tag `v*` fires two workflows: `release-core.yml` (npm OIDC Trusted Publisher,
-Node 24, `npm publish -w core --provenance`) and `release-python.yml` (build the
-wheel after `npm run build:presets`, publish to PyPI via OIDC). Both re-run the
-preset drift check first. Fork/upstream convention mirrors the other MolCrafts
-repos: origin = `Roy-Kid/molplot`, upstream = `MolCrafts/molplot`; integrate on
+Node 24, `npm publish -w core --provenance`) and `release-python.yml` (build
+`python/`, publish to PyPI via OIDC, then create the GitHub Release). Both
+first run `molci release-ready`: the tag must equal the version, sit on
+`master`, and its commit must have passed `ci`. A manual run is a dry run. The
+Trusted Publishers name these workflow files — do not rename them.
+
+Fork/upstream convention mirrors the other MolCrafts repos: origin = `Roy-Kid/molplot`, upstream = `MolCrafts/molplot`; integrate on
 `dev`, release from `master`.

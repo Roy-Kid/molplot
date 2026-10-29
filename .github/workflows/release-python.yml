@@ -1,44 +1,81 @@
-name: "Release: Python (PyPI)"
+name: release-python
 
+# A `v*` tag: build and check molcrafts-molplot, upload it to PyPI, make the
+# GitHub Release. A manual run builds and checks without publishing anything.
+# The PyPI Trusted Publisher names this file and the `pypi` environment.
+#
+# Not the shared python-release.yml: that builds the repository root, and the
+# Python package here lives in python/.
 on:
   push:
     tags: ["v*"]
-  # Manual re-trigger to republish after a workflow fix, without re-tagging
-  # (same rationale as release-core.yml's workflow_dispatch).
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  publish:
-    name: Build & publish Python package
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read  # to read the tagged commit's ci run
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # to see whether the tag is on master
+          persist-credentials: false
+      - uses: MolCrafts/molcrafts-ci/actions/setup-molci@master
+
+      - name: Build
+        run: |
+          uv build python --no-sources
+          uvx twine check --strict python/dist/*
+
+      # On a tag: the tag is the built version, is on master, and its commit
+      # passed ci. A manual run is a dry run and skips this.
+      - name: Ready to release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: molci release-ready --dist python/dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: python/dist/
+          if-no-files-found: error
+
+  pypi:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && github.repository_owner == 'MolCrafts'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
-      id-token: write # trusted publisher (OIDC)
+      id-token: write  # PyPI trusted publishing
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v8
         with:
-          node-version: "22"
-          cache: "npm"
-
-      - run: npm install
-
-      - name: Sync generated presets → python/src/molplot/presets/
-        run: npm run build:presets
-
-      - name: Presets in sync
-        run: npm run check:presets
-
-      - uses: actions/setup-python@v5
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          python-version: "3.11"
+          skip-existing: true
+          print-hash: true
 
-      - name: Build wheel + sdist
-        run: pip install build && python -m build
-        working-directory: python
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+  github-release:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
         with:
-          packages-dir: python/dist/
+          name: dist
+          path: dist/
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber

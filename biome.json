@@ -11,6 +11,7 @@
       "!**/site",
       "!**/docs/assets",
       "!**/.cache",
+      "!**/.ci-out",
       "!**/*.css",
       "!**/presets/generated.ts",
       "!**/semantic/generated.ts"

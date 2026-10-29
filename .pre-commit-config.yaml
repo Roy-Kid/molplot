@@ -1,52 +1,22 @@
 # Managed by prek: `prek install`
+# The checks of .github/ci.toml, by stage: `pre-commit` ones on every commit,
+# `pre-push` ones before a push. CI runs all of them.
 default_install_hook_types: [pre-commit, pre-push]
 
-# Local hooks mirror .github/workflows/ci.yml job-for-job so a green pre-push
-# means a green CI. See CLAUDE.md "Build & test".
 repos:
   - repo: local
     hooks:
-      - id: presets-drift
-        name: presets in sync (build-presets --check)
-        entry: npm run check:presets
+      - id: molci-pre-commit
+        name: molci check --stage pre-commit
+        entry: uvx --from git+https://github.com/MolCrafts/molcrafts-ci@master molci check --stage pre-commit
         language: system
         pass_filenames: false
+        always_run: true
         stages: [pre-commit]
-
-      - id: schema-drift
-        name: editor schema in sync (build-schema --check)
-        entry: npm run check:schema
+      - id: molci-pre-push
+        name: molci check --stage pre-push
+        entry: uvx --from git+https://github.com/MolCrafts/molcrafts-ci@master molci check --stage pre-push
         language: system
         pass_filenames: false
-        stages: [pre-commit]
-
-      - id: biome
-        name: biome check
-        entry: npm run check:biome
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-
-      - id: typecheck
-        name: tsc typecheck
-        entry: npm run typecheck
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-
-      - id: test-core
-        name: core tests (rstest)
-        entry: npm run test:core
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-
-      # Python tests run on commit *and* push so they cannot be skipped by
-      # forgetting a pre-push install. Resolve a Python that has pytest:
-      # VIRTUAL_ENV → repo .venv → python that can import pytest.
-      - id: test-python
-        name: python tests (pytest)
-        entry: bash scripts/run-python-tests.sh
-        language: system
-        pass_filenames: false
-        stages: [pre-commit, pre-push]
+        always_run: true
+        stages: [pre-push]

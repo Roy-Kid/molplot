@@ -20,6 +20,10 @@ build/
 site/
 docs/assets/
 
+# CI (molci check)
+.ci-out/
+.coverage
+
 # OS / editors
 .DS_Store
 *.log
