@@ -21,11 +21,13 @@ export function PlotToolbar({
   onToggleGrid,
   onFit,
   onExport,
+  disabled = false,
 }: {
   grid: boolean;
   onToggleGrid: () => void;
   onFit: () => void;
   onExport: (fmt: ExportFormat) => void;
+  disabled?: boolean;
 }): JSX.Element {
   return (
     <>
@@ -47,6 +49,7 @@ export function PlotToolbar({
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Export"
+                disabled={disabled}
                 className="size-control-compact border-0 shadow-none [&_svg]:size-4"
               >
                 <Download />

@@ -22,6 +22,7 @@ export interface Dataset {
   nodeId: string;
   label: string;
   columns: DatasetColumn[];
+  points?: (PathPoint | null)[];
 }
 
 export interface StyleItem {
@@ -87,6 +88,7 @@ export interface StyleCommand {
 }
 
 export interface HostResult extends RenderResult {
+  figureDpi?: Record<string, number>;
   script?: string;
   figureCount?: number;
   paths?: Record<string, PathPoint[]>;

@@ -19,8 +19,10 @@ export function QuickMenu({
   node,
   onApply,
   anchor,
+  dpi,
 }: {
   node: Node;
+  dpi: number;
   onApply: (command: Omit<Command, "baseRevision">) => Promise<boolean>;
   anchor: { x: number; y: number };
 }): JSX.Element | null {
@@ -28,6 +30,7 @@ export function QuickMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(anchor);
   useLayoutEffect(() => {
+    if (!stroke || node.role === "figure" || node.role === "panel") return;
     const el = menuRef.current;
     const paper = el?.offsetParent;
     if (!(el instanceof HTMLElement) || !(paper instanceof HTMLElement)) return;
@@ -37,7 +40,7 @@ export function QuickMenu({
       { w: el.offsetWidth, h: el.offsetHeight },
     );
     setPos((prev) => (prev.x === next.x && prev.y === next.y ? prev : next));
-  }, [anchor]);
+  }, [anchor, stroke, node.role]);
   if (!stroke || node.role === "figure" || node.role === "panel") return null;
 
   const setValue = (
@@ -45,10 +48,16 @@ export function QuickMenu({
     property: string,
     value: unknown,
   ) => {
-    void onApply({ type: "set", nodeId: node.id, component, property, value });
+    return onApply({
+      type: "set",
+      nodeId: node.id,
+      component,
+      property,
+      value,
+    });
   };
   const style = styleForDash(stroke.dash);
-  const widthPt = stroke.width == null ? null : pxToPt(stroke.width);
+  const widthPt = stroke.width == null ? null : pxToPt(stroke.width, dpi);
 
   return (
     <div
@@ -88,7 +97,9 @@ export function QuickMenu({
             step={0.1}
             format={formatSize}
             disabled={editState(node, "stroke", "width") !== "editable"}
-            onChange={(value) => setValue("stroke", "width", ptToPx(value))}
+            onChange={(value) =>
+              setValue("stroke", "width", ptToPx(value, dpi))
+            }
             className="h-6 w-10 border-0 bg-transparent px-1 text-center"
           />
           <span className="pr-1 text-micro text-muted-foreground">pt</span>
@@ -102,7 +113,10 @@ export function QuickMenu({
           setValue(
             "stroke",
             "dash",
-            dashForStyle(value as "solid" | "dashed" | "dotted" | "dashdot"),
+            dashForStyle(
+              value as "solid" | "dashed" | "dotted" | "dashdot",
+              dpi,
+            ),
           )
         }
       >

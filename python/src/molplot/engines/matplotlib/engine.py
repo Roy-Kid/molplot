@@ -282,7 +282,7 @@ class MatplotlibEngine:
 
     def _bind(self, node_id: str, obj: Any) -> str:
         self._handles[node_id] = obj
-        if isinstance(obj, Line2D) and hasattr(obj, "set_gid"):
+        if hasattr(obj, "set_gid"):
             obj.set_gid(artist_gid(node_id))
         return node_id
 
@@ -881,7 +881,12 @@ class MatplotlibEngine:
             dataset = self._line_dataset(node_id, obj)
             if dataset is not None:
                 datasets.append(dataset)
-        return {"paths": paths, "datasets": datasets}
+        figure_dpi = {
+            node_id: float(obj.dpi)
+            for node_id, obj in self._handles.items()
+            if isinstance(obj, Figure)
+        }
+        return {"paths": paths, "datasets": datasets, "figureDpi": figure_dpi}
 
     def _line_path(self, line: Line2D) -> list[dict[str, float]]:
         ax = line.axes
@@ -926,9 +931,26 @@ class MatplotlibEngine:
         ax = line.axes
         x_name = (ax.get_xlabel() if ax is not None else "") or "x"
         y_name = (ax.get_ylabel() if ax is not None else "") or "y"
+        # SVG paths may be simplified or expanded into step segments. Preserve
+        # a position for every table row rather than indexing SVG vertices.
+        fig = self._fig_of(line)
+        points: list[dict[str, float] | None] = []
+        try:
+            display = line.get_transform().transform(pairs)
+            figure_xy = fig.transFigure.inverted().transform(display)
+            for x, y in figure_xy:
+                xf, yf = float(x), float(y)
+                points.append(
+                    {"x": xf, "y": 1.0 - yf}
+                    if math.isfinite(xf) and math.isfinite(yf)
+                    else None
+                )
+        except (TypeError, ValueError, OverflowError):
+            points = [None] * len(pairs)
         return {
             "nodeId": node_id,
             "label": line.get_label() or "Series",
+            "points": points,
             "columns": [
                 {"name": x_name, "values": [p[0] for p in pairs]},
                 {"name": y_name, "values": [p[1] for p in pairs]},
@@ -939,7 +961,10 @@ class MatplotlibEngine:
         from io import StringIO
 
         buf = StringIO()
-        self._fig.savefig(buf, format="svg")
+        # Scene geometry uses the full figure frame. rcParams['savefig.bbox']
+        # may request tight cropping for exports; applying that crop here moves
+        # every hit target and data highlight relative to the visible SVG.
+        self._fig.savefig(buf, format="svg", bbox_inches=self._fig.bbox_inches)
         return View(kind="svg", svg=buf.getvalue())
 
     def export(self, fmt: str) -> bytes:

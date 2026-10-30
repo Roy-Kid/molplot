@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
+import { CommitInput } from "@/components/ui/commit-input";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
 import { NumberField } from "@/components/ui/number-field";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -103,25 +103,32 @@ export function PresetPanel({
     source.id !== "custom" &&
     source.styles.length > 0;
 
-  const applyNamed = (nextSource: StyleSource, name: string) => {
+  const applyNamed = async (nextSource: StyleSource, name: string) => {
     if (!nextSource.available) return;
-    void onApplyStyle({
+    const ok = await onApplyStyle({
       type: "style",
       source: nextSource.id,
       name,
       rc: nextSource.id === "custom" ? (draft ?? style.rc) : undefined,
     });
+    if (!ok) {
+      setPicked(current?.source ?? "script");
+      setPickedName(current?.name ?? "script");
+      setDraft(style.rc);
+    }
   };
 
-  const commitRc = (patch: Partial<CustomRc>) => {
+  const commitRc = async (patch: Partial<CustomRc>) => {
     const next = { ...(draft ?? style.rc), ...patch };
     setDraft(next);
-    void onApplyStyle({
+    const ok = await onApplyStyle({
       type: "style",
       source: "custom",
       name: "custom",
       rc: next,
     });
+    if (!ok) setDraft(style.rc);
+    return ok;
   };
 
   return (
@@ -139,7 +146,7 @@ export function PresetPanel({
                 if (!next) return;
                 const name = next.styles[0]?.id ?? value;
                 setPickedName(name);
-                applyNamed(next, name);
+                void applyNamed(next, name);
               }}
             >
               <SelectTrigger
@@ -165,7 +172,7 @@ export function PresetPanel({
                 disabled={applying || unavailable}
                 onValueChange={(value) => {
                   setPickedName(value);
-                  if (source) applyNamed(source, value);
+                  if (source) void applyNamed(source, value);
                 }}
               >
                 <SelectTrigger
@@ -219,7 +226,7 @@ function CustomRcForm({
   rc: CustomRc;
   disabled: boolean;
   latex?: { available: boolean; hint: string | null };
-  onCommit: (patch: Partial<CustomRc>) => void;
+  onCommit: (patch: Partial<CustomRc>) => Promise<boolean>;
 }): JSX.Element {
   const families = FAMILIES.includes(rc.fontFamily as (typeof FAMILIES)[number])
     ? FAMILIES
@@ -390,18 +397,19 @@ function CustomRcForm({
           onChange={(markerSize) => onCommit({ markerSize })}
         />
         <InspectorField label="Cycle" htmlFor="preset-palette">
-          <Input
+          <CommitInput
             id="preset-palette"
-            key={rc.palette.join(",")}
-            defaultValue={rc.palette.join(", ")}
+            value={rc.palette.join(", ")}
             disabled={disabled}
             className="h-control-compact bg-surface text-micro"
-            onBlur={(event) => {
-              const palette = event.target.value
-                .split(/[,\s]+/)
-                .map((item) => item.trim())
-                .filter((item) => /^#[0-9a-fA-F]{6}$/.test(item));
-              if (palette.length) onCommit({ palette });
+            onCommit={async (value) => {
+              const palette = value.split(/[,\s]+/).filter(Boolean);
+              if (
+                !palette.length ||
+                palette.some((item) => !/^#[0-9a-fA-F]{6}$/.test(item))
+              )
+                return false;
+              return onCommit({ palette });
             }}
           />
         </InspectorField>
@@ -515,7 +523,7 @@ function SizeField({
   min?: number;
   step?: number;
   disabled: boolean;
-  onChange: (value: number) => void;
+  onChange: (value: number) => Promise<boolean>;
 }): JSX.Element {
   return (
     <InspectorField label={label}>

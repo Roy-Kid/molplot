@@ -42,6 +42,13 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: test-page
+        name: workbench tests (rstest)
+        entry: npm run test:page
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       # Python tests run on commit *and* push so they cannot be skipped by
       # forgetting a pre-push install. Resolve a Python that has pytest:
       # VIRTUAL_ENV → repo .venv → python that can import pytest.

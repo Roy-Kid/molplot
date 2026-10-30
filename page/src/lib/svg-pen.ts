@@ -17,7 +17,9 @@ export function findArtistPath(
   const el = svg.querySelector(`#${CSS.escape(gid)}`);
   if (!el) return null;
   if (el instanceof SVGPathElement) return el;
-  const path = el.querySelector("path");
+  const path = [...el.querySelectorAll("path")].find(
+    (item) => !item.closest("defs"),
+  );
   return path instanceof SVGPathElement ? path : null;
 }
 
@@ -78,6 +80,9 @@ export function hitSvgSeries(
     const scale = ctm ? Math.hypot(ctm.a, ctm.b) || 1 : 1;
     const slop = (slopPx * 2) / scale;
     const probe = path.cloneNode(true) as SVGPathElement;
+    // Matplotlib writes stroke-width in style, which overrides presentation
+    // attributes. Clear it so the probe actually gets the requested hit slop.
+    probe.removeAttribute("style");
     probe.setAttribute("fill", "none");
     probe.setAttribute("stroke", "#000");
     probe.setAttribute("stroke-width", String(slop));
@@ -85,9 +90,13 @@ export function hitSvgSeries(
     probe.setAttribute("stroke-linejoin", "round");
     probe.removeAttribute("clip-path");
     path.parentNode?.appendChild(probe);
-    const local = clientToLocal(probe, clientX, clientY);
-    const hit = Boolean(local && probe.isPointInStroke(local));
-    probe.remove();
+    let hit = false;
+    try {
+      const local = clientToLocal(probe, clientX, clientY);
+      hit = Boolean(local && probe.isPointInStroke(local));
+    } finally {
+      probe.remove();
+    }
     if (hit) return nodeId;
   }
   return null;
@@ -103,21 +112,26 @@ export function clearDatumHighlight(svg: SVGSVGElement): void {
   svg.querySelector(`#${DATUM_ID}`)?.remove();
 }
 
-/** Mark one vertex of a series path. Index matches the data-table row. */
+/** Mark a source data position; SVG vertices are a fallback for older hosts. */
 export function paintDatumHighlight(
   svg: SVGSVGElement,
-  path: SVGPathElement,
+  path: SVGPathElement | null,
   index: number,
+  position?: { x: number; y: number } | null,
 ): void {
   clearDatumHighlight(svg);
-  const d = path.getAttribute("d");
-  if (!d) return;
-  const point = pathVertices(d)[index];
+  if (position === null) return;
+  const point = position
+    ? {
+        x: svg.viewBox.baseVal.x + position.x * svg.viewBox.baseVal.width,
+        y: svg.viewBox.baseVal.y + position.y * svg.viewBox.baseVal.height,
+      }
+    : pathVertices(path?.getAttribute("d") ?? "")[index];
   if (!point) return;
   const group = document.createElementNS(SVG_NS, "g");
   group.setAttribute("id", DATUM_ID);
   group.setAttribute("pointer-events", "none");
-  const clip = path.getAttribute("clip-path");
+  const clip = path?.getAttribute("clip-path");
   if (clip) group.setAttribute("clip-path", clip);
   group.appendChild(
     square(point.x, point.y, SELECTION.datum, SELECTION.accent, SELECTION.halo),

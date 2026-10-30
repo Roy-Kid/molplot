@@ -51,8 +51,8 @@ export function WorkbenchSidePanel({
   // commit overwrites the live value written during drag by WorkbenchShell.
   React.useLayoutEffect(() => {
     const panel = panelRef.current;
-    if (!panel || drawer) return;
-    panel.style.width = inlineWidth;
+    if (!panel) return;
+    panel.style.width = drawer ? "" : inlineWidth;
   }, [drawer, inlineWidth, panelRef]);
 
   React.useEffect(() => {
@@ -102,7 +102,10 @@ export function WorkbenchSidePanel({
 
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    if (document.activeElement === panelRef.current) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();
     } else if (!event.shiftKey && document.activeElement === last) {

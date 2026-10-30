@@ -237,3 +237,74 @@ def test_load_script_does_not_pick_up_leftover_figures(tmp_path):
     figs = load_script(str(script))
     assert len(figs) == 1
     assert figs[0] is not leftover
+
+
+def test_workbench_dpi_and_data_points_follow_the_actual_figure():
+    import numpy as np
+
+    fig, ax = plt.subplots(dpi=240)
+    xs = np.linspace(0, 1, 2000)
+    line, = ax.plot(xs, xs**2, drawstyle="steps-post")
+    session = Session(fig, script=None)
+    payload = session.result_payload("points")
+    assert payload["figureDpi"] == {"figure/0": 240.0}
+    dataset = payload["datasets"][0]
+    assert len(dataset["points"]) == 2000
+    # The table's row refers to the source data, not a simplified/step SVG vertex.
+    expected = fig.transFigure.inverted().transform(
+        line.get_transform().transform((xs[1500], xs[1500] ** 2))
+    )
+    point = dataset["points"][1500]
+    assert np.allclose([point["x"], point["y"]], [expected[0], 1 - expected[1]])
+
+
+def test_workbench_points_stay_aligned_when_data_contains_gaps():
+    import numpy as np
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1, 2, 3], [1, np.nan, 3, 4])
+    payload = Session(fig, script=None).result_payload("gaps")
+    dataset = payload["datasets"][0]
+    assert dataset["columns"][0]["values"] == [0, 2, 3]
+    assert len(dataset["points"]) == 3
+
+
+def test_workbench_svg_keeps_figure_frame_when_exports_use_tight_crop():
+    import re
+
+    import matplotlib as mpl
+
+    with mpl.rc_context({"savefig.bbox": "tight"}):
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=240)
+        ax.plot([0, 1], [0, 1])
+        engine = MatplotlibEngine(fig)
+        svg = engine.render().svg
+        match = re.search(r'viewBox="([^"]+)"', svg)
+        assert match is not None
+        assert [float(v) for v in match.group(1).split()] == [0, 0, 288, 216]
+        # Export still respects the selected tight crop.
+        exported = engine.export("svg").decode()
+        assert re.search(r'viewBox="([^"]+)"', exported).group(1) != match.group(1)
+
+
+def test_workbench_movable_artists_have_scene_ids_in_svg():
+    from molplot.engines.matplotlib.engine import artist_gid
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1], label="line")
+    ax.set_title("Movable title")
+    ax.legend()
+    payload = Session(fig, script=None).result_payload("ids")
+
+    def visit(node):
+        yield node
+        for child in node.get("children", []):
+            yield from visit(child)
+
+    movable = [
+        node for node in visit(payload["scene"]["root"])
+        if node.get("editability", {}).get("geometry", {}).get("bbox") == "editable"
+    ]
+    assert {node["role"] for node in movable} >= {"panel", "title", "legend"}
+    for node in movable:
+        assert f'id="{artist_gid(node["id"])}"' in payload["view"]["svg"]

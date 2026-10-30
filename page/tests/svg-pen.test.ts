@@ -1,5 +1,11 @@
 import { describe, expect, it } from "@rstest/core";
-import { artistGid, pathVertices, sampleAnchors } from "@/lib/svg-pen";
+import {
+  artistGid,
+  findArtistPath,
+  paintDatumHighlight,
+  pathVertices,
+  sampleAnchors,
+} from "@/lib/svg-pen";
 
 describe("artistGid", () => {
   it("mirrors the Python SVG id", () => {
@@ -58,5 +64,29 @@ describe("sampleAnchors", () => {
     expect(sampled[0]).toEqual({ x: 0, y: 0 });
     expect(sampled[sampled.length - 1]).toEqual({ x: 20, y: 0 });
     expect(sampled).toHaveLength(5);
+  });
+});
+
+describe("source datum positions", () => {
+  it("highlights a source row even without a stroked path", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 400 200");
+    paintDatumHighlight(svg, null, 150, { x: 0.75, y: 0.25 });
+    const marker = svg.querySelector("#molplot-datum rect")!;
+    expect(
+      Number(marker.getAttribute("x")) +
+        Number(marker.getAttribute("width")) / 2,
+    ).toBe(300);
+    expect(
+      Number(marker.getAttribute("y")) +
+        Number(marker.getAttribute("height")) / 2,
+    ).toBe(50);
+  });
+
+  it("does not mistake a marker definition for the series stroke", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.innerHTML =
+      '<g id="molplot-series"><defs><path d="M 0 0 L 1 1"/></defs><use href="#marker"/></g>';
+    expect(findArtistPath(svg, "series")).toBeNull();
   });
 });

@@ -70,8 +70,8 @@ function RulerTrack({
       className={cn("relative overflow-hidden bg-canvas", className)}
       style={
         vertical
-          ? { width: RULER_PX, height: lengthPx }
-          : { width: lengthPx, height: RULER_PX }
+          ? { width: RULER_PX, minHeight: 0 }
+          : { minWidth: 0, height: RULER_PX }
       }
     >
       {ticks.map((tick) => {

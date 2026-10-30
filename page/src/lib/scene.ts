@@ -5,6 +5,18 @@ import type {
   Node,
   Role,
 } from "@molcrafts/molplot/semantic";
+import type { HostResult } from "@/lib/host";
+import { MPL_DPI } from "@/lib/units";
+
+export function nodeDpi(result: HostResult, nodeId: string): number {
+  const figure = nodePath(result.scene.root, nodeId)
+    .reverse()
+    .find((node) => node.role === "figure");
+  const dpi = figure ? result.figureDpi?.[figure.id] : undefined;
+  return dpi != null && Number.isFinite(dpi) && dpi > 0
+    ? dpi
+    : result.style?.rc.dpi || MPL_DPI;
+}
 
 export interface WalkedNode {
   node: Node;

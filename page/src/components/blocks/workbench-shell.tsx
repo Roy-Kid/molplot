@@ -228,19 +228,31 @@ export function WorkbenchShell({
 
   const setLeftOpen = useCallback(
     (open: boolean) => {
+      if (open && isNarrow) {
+        setRightOpenFlag(false);
+        applyOpen("right", false);
+      }
       setLeftOpenFlag(open);
       applyOpen("left", open);
     },
-    [applyOpen, setLeftOpenFlag],
+    [applyOpen, isNarrow, setLeftOpenFlag, setRightOpenFlag],
   );
 
   const setRightOpen = useCallback(
     (open: boolean) => {
+      if (open && isNarrow) {
+        setLeftOpenFlag(false);
+        applyOpen("left", false);
+      }
       setRightOpenFlag(open);
       applyOpen("right", open);
     },
-    [applyOpen, setRightOpenFlag],
+    [applyOpen, isNarrow, setLeftOpenFlag, setRightOpenFlag],
   );
+
+  useEffect(() => {
+    if (isNarrow && leftOpen && rightOpen) setRightOpen(false);
+  }, [isNarrow, leftOpen, rightOpen, setRightOpen]);
 
   // Parent-driven open (e.g. MolPlot "show data") and narrow↔wide remount.
   // Skip while the user is dragging — live layout must not fight the library.

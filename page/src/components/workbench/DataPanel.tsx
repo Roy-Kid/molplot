@@ -32,11 +32,11 @@ export function DataPanel({
   const datasets = result?.datasets ?? [];
   const [picked, setPicked] = useState<string | null>(null);
   const activeId =
-    (picked && datasets.some((item) => item.nodeId === picked)
-      ? picked
-      : null) ??
     (selectedId && datasets.some((item) => item.nodeId === selectedId)
       ? selectedId
+      : null) ??
+    (picked && datasets.some((item) => item.nodeId === picked)
+      ? picked
       : null) ??
     datasets[0]?.nodeId ??
     null;
@@ -83,6 +83,7 @@ export function DataPanel({
         </Select>
       </div>
       <DataList
+        key={active.nodeId}
         dataset={active}
         highlighted={highlighted}
         onHighlight={onHighlight}
@@ -104,7 +105,10 @@ function DataList({
   onSelect: (id: string) => void;
 }): JSX.Element {
   const columns = dataset.columns;
-  const rowCount = columns[0]?.values.length ?? 0;
+  const rowCount = Math.max(
+    0,
+    ...columns.map((column) => column.values.length),
+  );
   return (
     <div className="min-h-0 flex-1 overflow-auto border-t border-border">
       <table className="w-full border-collapse text-micro">
@@ -125,7 +129,8 @@ function DataList({
               highlighted.index === row;
             return (
               <tr
-                key={`${dataset.nodeId}:${columns[0]?.values[row]}:${columns[1]?.values[row]}`}
+                // biome-ignore lint/suspicious/noArrayIndexKey: table rows are addressed by index, and coordinates can repeat.
+                key={`${dataset.nodeId}:${row}`}
                 className={cn(
                   "cursor-pointer",
                   active

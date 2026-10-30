@@ -1,7 +1,7 @@
 import type { Command, ComponentName, Node } from "@molcrafts/molplot/semantic";
-import { type JSX, useEffect, useState } from "react";
+import type { JSX } from "react";
+import { CommitInput } from "@/components/ui/commit-input";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
 import { NumberField } from "@/components/ui/number-field";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -23,7 +23,13 @@ import {
   parseStringList,
 } from "@/lib/format";
 import type { HostResult } from "@/lib/host";
-import { editState, nodePath, nodeTitle, scriptStem } from "@/lib/scene";
+import {
+  editState,
+  nodeDpi,
+  nodePath,
+  nodeTitle,
+  scriptStem,
+} from "@/lib/scene";
 import { dashForStyle, ptToPx, pxToPt, styleForDash } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
@@ -61,12 +67,18 @@ export function Inspector({
     property: string,
     value: unknown,
   ) => {
-    void onApply({ type: "set", nodeId: node.id, component, property, value });
+    return onApply({
+      type: "set",
+      nodeId: node.id,
+      component,
+      property,
+      value,
+    });
   };
 
   return (
     <ScrollArea className="h-full">
-      <div className="flex flex-col gap-4 p-3">
+      <div key={node.id} className="flex flex-col gap-4 p-3">
         <header className="space-y-1">
           <p className="text-body font-semibold">{nodeTitle(node)}</p>
           <p className="text-micro text-muted-foreground">
@@ -85,7 +97,11 @@ export function Inspector({
         {node.components.stroke &&
         node.role !== "figure" &&
         node.role !== "panel" ? (
-          <LineSection node={node} onSet={setValue} />
+          <LineSection
+            node={node}
+            dpi={nodeDpi(result, node.id)}
+            onSet={setValue}
+          />
         ) : null}
         {node.components.fill &&
         node.role !== "figure" &&
@@ -131,7 +147,11 @@ function FigureSection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const layout = node.components.layout;
   return (
@@ -185,7 +205,11 @@ function AxesSection({
   onApply,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
   onApply: (command: Omit<Command, "baseRevision">) => Promise<boolean>;
 }): JSX.Element {
   const layout = node.components.layout;
@@ -251,10 +275,16 @@ function AxisSection({
     property: string,
     value: unknown,
   ) => {
-    void onApply({ type: "set", nodeId: node.id, component, property, value });
+    return onApply({
+      type: "set",
+      nodeId: node.id,
+      component,
+      property,
+      value,
+    });
   };
   const title = node.label ?? "Axis";
-  const ticksText = (axis?.ticks ?? []).map(formatScience).join(", ");
+  const ticksText = (axis?.ticks ?? []).join(", ");
   const labelsText = (axis?.tickLabels ?? []).join(", ");
   return (
     <InspectorSection title={title}>
@@ -337,30 +367,28 @@ function AxisSection({
         </Select>
       </InspectorField>
       <InspectorField label="Ticks" htmlFor={`${node.id}-ticks`}>
-        <Input
+        <CommitInput
           id={`${node.id}-ticks`}
-          key={ticksText}
-          defaultValue={ticksText}
+          value={ticksText}
           disabled={editState(node, "axis", "ticks") !== "editable"}
           className="h-control-compact bg-surface text-micro"
-          onBlur={(event) => {
-            const next = parseNumberList(event.target.value);
-            if (next == null) return;
-            onSet("axis", "ticks", next);
+          onCommit={async (value) => {
+            const next = parseNumberList(value);
+            if (next == null) return false;
+            return onSet("axis", "ticks", next);
           }}
         />
       </InspectorField>
       <InspectorField label="Tick labels" htmlFor={`${node.id}-tick-labels`}>
-        <Input
+        <CommitInput
           id={`${node.id}-tick-labels`}
-          key={labelsText}
-          defaultValue={labelsText}
+          value={labelsText}
           disabled={editState(node, "axis", "tickLabels") !== "editable"}
           className="h-control-compact bg-surface text-micro"
           placeholder="auto"
-          onBlur={(event) => {
-            onSet("axis", "tickLabels", parseStringList(event.target.value));
-          }}
+          onCommit={(value) =>
+            onSet("axis", "tickLabels", parseStringList(value))
+          }
         />
       </InspectorField>
     </InspectorSection>
@@ -369,10 +397,16 @@ function AxisSection({
 
 function LineSection({
   node,
+  dpi,
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  dpi: number;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const stroke = node.components.stroke;
   const style = styleForDash(stroke?.dash);
@@ -390,12 +424,12 @@ function LineSection({
         ) : (
           <ValueChip>
             <NumberField
-              value={pxToPt(stroke.width)}
+              value={pxToPt(stroke.width, dpi)}
               min={0.1}
               step={0.1}
               format={formatSize}
               disabled={editState(node, "stroke", "width") !== "editable"}
-              onChange={(value) => onSet("stroke", "width", ptToPx(value))}
+              onChange={(value) => onSet("stroke", "width", ptToPx(value, dpi))}
               className="h-auto w-full border-0 bg-transparent px-0"
             />
             <span className="text-muted-foreground">pt</span>
@@ -410,7 +444,10 @@ function LineSection({
             onSet(
               "stroke",
               "dash",
-              dashForStyle(value as "solid" | "dashed" | "dotted" | "dashdot"),
+              dashForStyle(
+                value as "solid" | "dashed" | "dotted" | "dashdot",
+                dpi,
+              ),
             )
           }
         >
@@ -443,7 +480,11 @@ function FillSection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const fill = node.components.fill;
   return (
@@ -469,29 +510,23 @@ function TextSection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const content = node.components.text?.content ?? "";
   const disabled = editState(node, "text", "content") !== "editable";
-  const [draft, setDraft] = useState(content);
-  useEffect(() => setDraft(content), [content]);
   return (
     <InspectorSection title="Text">
       <InspectorField label="Content" htmlFor="text-content">
-        <Input
+        <CommitInput
           id="text-content"
-          value={draft}
+          value={content}
           disabled={disabled}
           className="h-control-compact bg-surface text-micro"
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={() => {
-            if (draft !== content) onSet("text", "content", draft);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && draft !== content) {
-              onSet("text", "content", draft);
-            }
-          }}
+          onCommit={(value) => onSet("text", "content", value)}
         />
       </InspectorField>
     </InspectorSection>
@@ -503,7 +538,11 @@ function MarkerSection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const marker = node.components.marker;
   const shape = marker?.shape ?? "none";
@@ -565,7 +604,11 @@ function TypographySection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const typo = node.components.typography;
   return (
@@ -635,16 +678,15 @@ function TypographySection({
         </Select>
       </InspectorField>
       <InspectorField label="Family" htmlFor="font-family">
-        <Input
+        <CommitInput
           id="font-family"
-          key={typo?.family ?? ""}
-          defaultValue={typo?.family ?? ""}
+          value={typo?.family ?? ""}
           disabled={editState(node, "typography", "family") !== "editable"}
           className="h-control-compact bg-surface text-micro"
-          onBlur={(event) => {
-            const next = event.target.value.trim();
-            if (next && next !== typo?.family)
-              onSet("typography", "family", next);
+          onCommit={async (value) => {
+            const next = value.trim();
+            if (!next) return false;
+            return onSet("typography", "family", next);
           }}
         />
       </InspectorField>
@@ -657,7 +699,11 @@ function AppearanceSection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element {
   const appearance = node.components.appearance;
   const visible = appearance?.visible !== false;
@@ -698,13 +744,17 @@ function GeometrySection({
   onSet,
 }: {
   node: Node;
-  onSet: (component: ComponentName, property: string, value: unknown) => void;
+  onSet: (
+    component: ComponentName,
+    property: string,
+    value: unknown,
+  ) => Promise<boolean>;
 }): JSX.Element | null {
   const box = node.components.geometry?.bbox;
   const disabled = editState(node, "geometry", "bbox") !== "editable";
   if (!box) return null;
   const commit = (next: { x: number; y: number }) => {
-    onSet("geometry", "bbox", { ...box, ...next });
+    return onSet("geometry", "bbox", { ...box, ...next });
   };
   return (
     <InspectorSection title="Position">

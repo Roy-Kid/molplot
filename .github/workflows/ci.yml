@@ -53,6 +53,19 @@ jobs:
       - name: Test core (rstest, node)
         run: npm run test:core
 
+  test-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Test workbench interactions
+        run: npm run test:page
+      - name: Build workbench
+        run: npm run build:page
+
   build-core:
     runs-on: ubuntu-latest
     needs: [presets, lint, typecheck, test-core]
