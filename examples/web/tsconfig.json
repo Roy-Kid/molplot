@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["react", "react-dom"],
+    "types": ["react", "react-dom", "@rsbuild/core/types"],
     "paths": {
       "@molcrafts/molplot": ["../../core/src/index.ts"]
     }

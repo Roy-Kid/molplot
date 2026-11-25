@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "@rstest/core";
 import {
+  ELEMENT_CSS,
   parseAspect,
   parseInteractive,
   parseSpec,
@@ -92,6 +93,42 @@ describe("readSpec", () => {
     expect(bad.spec).toBeNull();
     expect(bad.reason).toBe("invalid-json");
     expect(bad.cause).toBeInstanceOf(SyntaxError);
+  });
+});
+
+describe("element layout", () => {
+  // A rule's selector, by the class it ends on.
+  const ruleFor = (cls: string): string => {
+    const match = new RegExp(`([^{}]*\\.${cls}\\s*)\\{`).exec(ELEMENT_CSS);
+    if (!match?.[1]) throw new Error(`no rule for .${cls}`);
+    return match[1].trim();
+  };
+
+  it("keeps the frame, surface and embed rules out of :where", () => {
+    // `.vega-embed { position: relative }` and a page's `molplot-chart { display: block }`
+    // must not win, or the canvas sizes the surface and the chart grows.
+    for (const cls of [
+      "molplot-chart__frame",
+      "molplot-chart__surface",
+      "molplot-chart__embed",
+    ]) {
+      expect(ruleFor(cls)).not.toContain(":where");
+      expect(ruleFor(cls)).toContain("[data-molplot-chart]");
+    }
+  });
+
+  it("takes the surface out of its content's size", () => {
+    const surface = ELEMENT_CSS.slice(
+      ELEMENT_CSS.indexOf(ruleFor("molplot-chart__surface")),
+    );
+    expect(surface.slice(0, surface.indexOf("}"))).toContain("flex: 1 1 0;");
+    const embed = ELEMENT_CSS.slice(
+      ELEMENT_CSS.indexOf(ruleFor("molplot-chart__embed")),
+    );
+    expect(embed.slice(0, embed.indexOf("}"))).toContain("position: absolute;");
+    expect(ELEMENT_CSS).toMatch(
+      /\[data-molplot-chart\] \{\s*position: relative;/,
+    );
   });
 });
 
@@ -226,12 +263,38 @@ describe("RawChart (the element's renderer)", () => {
     chart.dispose();
   });
 
-  it("respects an explicitly authored height", async () => {
+  it("measures the layout surface when vega grows the embed", async () => {
+    const layout = {
+      classList: {
+        contains: (name: string) => name === "molplot-chart__surface",
+      },
+      getBoundingClientRect: () => ({ width: 500, height: 220 }) as DOMRect,
+    };
+    const embed = makeFakeContainer();
+    Object.assign(embed, {
+      parentElement: layout,
+      getBoundingClientRect: () => ({ width: 500, height: 900 }) as DOMRect,
+    });
+    const chart = new RawChart(embed, {
+      spec: { mark: "bar", height: 320 },
+    });
+    await chart.ready();
+    expect(fake.specs[0]?.width).toBe(500);
+    expect(fake.specs[0]?.height).toBe(220);
+    chart.dispose();
+  });
+
+  it("fills the host even when the spec authors a height", async () => {
     const chart = new RawChart(container, {
       spec: { mark: "point", height: 180 },
     });
     await chart.ready();
-    expect(fake.specs[0]?.height).toBe(180);
+    expect(fake.specs[0]?.width).toBe(640);
+    expect(fake.specs[0]?.height).toBe(320);
+    const config = (
+      fake.specs[0] as { config?: { axis?: { labelAngle?: number } } }
+    ).config;
+    expect(config?.axis?.labelAngle).toBe(0);
     chart.dispose();
   });
 
@@ -266,6 +329,54 @@ describe("RawChart (the element's renderer)", () => {
     expect(out.map((p) => p.name)).toEqual(
       expect.arrayContaining(["pick", "zoomX"]),
     );
+    chart.dispose();
+  });
+
+  it("binds zoom to the value axis only when the other axis is categorical", async () => {
+    const chart = new RawChart(container, {
+      spec: {
+        mark: "bar",
+        encoding: {
+          x: { field: "cat", type: "nominal" },
+          y: { field: "val", type: "quantitative" },
+        },
+      },
+    });
+    await chart.ready();
+    const out = (fake.specs[0] as { params: { name: string }[] }).params;
+    expect(out.map((p) => p.name)).toEqual(["zoomY"]);
+    chart.dispose();
+  });
+
+  it("titles tooltips like the axes and lets the legend dim other series", async () => {
+    const chart = new RawChart(container, {
+      spec: {
+        mark: "bar",
+        encoding: {
+          x: { field: "cat", type: "nominal", axis: { title: "junction" } },
+          y: {
+            field: "val",
+            type: "quantitative",
+            axis: { title: "length (Å)" },
+          },
+          color: { field: "key", type: "nominal", legend: { title: null } },
+        },
+      },
+    });
+    await chart.ready();
+    const spec = fake.specs[0] as {
+      encoding: { tooltip: { title: string }[]; opacity: unknown };
+      params: { name: string; bind?: unknown }[];
+    };
+    expect(spec.encoding.tooltip.map((t) => t.title)).toEqual([
+      "junction",
+      "length (Å)",
+      "series",
+    ]);
+    expect(spec.params.find((p) => p.name === "series")?.bind).toBe("legend");
+    expect(spec.encoding.opacity).toBeDefined();
+    // The legend selection is not a zoom binding.
+    expect(spec.params.map((p) => p.name)).toEqual(["series", "zoomY"]);
     chart.dispose();
   });
 

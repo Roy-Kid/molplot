@@ -81,16 +81,27 @@ export class RawChart extends VegaChart {
       ? deepMergeConfig(baseConfig, stripFrozenTypeSizes(authorConfig))
       : baseConfig;
 
+    const {
+      width: _authorWidth,
+      height: _authorHeight,
+      autosize: _authorAutosize,
+      ...rest
+    } = spec;
+    // Host size is applied after the author spec. A numeric height in the
+    // spec (the paper default) must not leave a band under the plot.
     const base: VegaLiteSpec = {
       $schema: VL_SCHEMA,
+      ...rest,
       width: sizeHint.width,
       height,
       autosize: { type: "fit", contains: "padding" },
-      ...spec,
       config,
     };
 
-    if (channels.length === 0) return base;
+    const explorable = this.interactive
+      ? withSeriesToggle(withTooltip(base))
+      : base;
+    if (channels.length === 0) return explorable;
 
     const zoom = interactionParams(channels);
     const layers = Array.isArray(spec.layer)
@@ -112,10 +123,93 @@ export class RawChart extends VegaChart {
     }
 
     return {
-      ...base,
-      params: mergeZoomParams(spec.params, zoom),
+      ...explorable,
+      params: mergeZoomParams(explorable.params, zoom),
     };
   }
+}
+
+type ChannelDef = {
+  field?: string;
+  type?: string;
+  title?: unknown;
+  axis?: { title?: unknown } | null;
+  legend?: { title?: unknown } | null;
+};
+
+/** The name a reader sees for a channel: its title, its axis or legend title, then the field. */
+export function channelTitle(def: ChannelDef, fallback: string): string {
+  for (const title of [def.title, def.axis?.title, def.legend?.title]) {
+    if (typeof title === "string" && title.trim() !== "") return title;
+  }
+  return fallback;
+}
+
+/**
+ * Hovering a mark shows its encoded values under the titles the reader
+ * sees on the axes and legend, unless the author chose a tooltip.
+ */
+function withTooltip(spec: VegaLiteSpec): VegaLiteSpec {
+  const encoding = spec.encoding as
+    | Record<string, ChannelDef | undefined>
+    | undefined;
+  if (!encoding || encoding.tooltip !== undefined || spec.mark === undefined)
+    return spec;
+  const tooltip = (["x", "y", "color"] as const).flatMap((channel) => {
+    const def = encoding[channel];
+    if (!def?.field) return [];
+    const title = channelTitle(def, channel === "color" ? "series" : def.field);
+    return [
+      {
+        field: def.field,
+        type: def.type ?? "nominal",
+        title,
+        ...(def.type === "quantitative" && { format: ".4~g" }),
+      },
+    ];
+  });
+  return tooltip.length === 0
+    ? spec
+    : { ...spec, encoding: { ...encoding, tooltip } };
+}
+
+export const SERIES_PARAM = "series";
+
+/**
+ * Clicking a legend entry, or a mark, dims the other series (shift-click
+ * adds; clicking empty space clears). View
+ * state only: the data and the spec are unchanged, and a re-render clears it.
+ */
+function withSeriesToggle(spec: VegaLiteSpec): VegaLiteSpec {
+  const encoding = spec.encoding as
+    | Record<
+        string,
+        { field?: string; type?: string; legend?: unknown } | undefined
+      >
+    | undefined;
+  const color = encoding?.color;
+  if (!color?.field || color.legend === null || encoding?.opacity !== undefined)
+    return spec;
+  if (color.type !== "nominal" && color.type !== "ordinal") return spec;
+  const params = Array.isArray(spec.params)
+    ? (spec.params as { name?: string }[])
+    : [];
+  if (params.some((param) => param.name === SERIES_PARAM)) return spec;
+  return {
+    ...spec,
+    params: [
+      ...params,
+      {
+        name: SERIES_PARAM,
+        select: { type: "point", fields: [color.field] },
+        bind: "legend",
+      },
+    ],
+    encoding: {
+      ...encoding,
+      opacity: { condition: { param: SERIES_PARAM, value: 1 }, value: 0.18 },
+    },
+  };
 }
 
 function mergeZoomParams(

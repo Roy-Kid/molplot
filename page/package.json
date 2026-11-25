@@ -12,8 +12,9 @@
   },
   "dependencies": {
     "@fluentui/react-icons": "2.0.344",
-    "@molcrafts/ui": "file:vendor/ui/molcrafts-ui-0.1.0-alpha.0.tgz",
-    "@molcrafts/ui-tokens": "file:vendor/ui/molcrafts-ui-tokens-0.1.0-alpha.0.tgz",
+    "@molcrafts/ui": "file:../vendor/ui/molcrafts-ui-0.1.0-alpha.1-workbench-125bf2d1.tgz",
+    "@molcrafts/ui-tokens": "0.1.0-alpha.1",
+    "@molcrafts/ui-web-components": "file:../vendor/ui/molcrafts-ui-web-components-0.1.0-alpha.1-workbench.tgz",
     "clsx": "^2.1.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

@@ -6,6 +6,7 @@
  * supply the slots; they must not invent a second page frame.
  */
 
+import { WorkbenchSidePanel } from "@molcrafts/ui";
 import {
   type JSX,
   type ReactNode,
@@ -34,7 +35,6 @@ import {
   ResizablePanelGroup,
   usePanelRef,
 } from "./workbench-resizable";
-import { WorkbenchSidePanel } from "./workbench-side-panel";
 
 export interface WorkbenchShellProps {
   /** Product name, top-left, `--text-title` / font-semibold. */

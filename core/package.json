@@ -43,9 +43,13 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@molcrafts/ui": "file:../vendor/ui/molcrafts-ui-0.1.0-alpha.1-workbench-125bf2d1.tgz",
+    "@molcrafts/ui-web-components": "file:../vendor/ui/molcrafts-ui-web-components-0.1.0-alpha.1-workbench.tgz",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "vega": "^6.3.1",
-    "vega-lite": "^6.4.3",
-    "vega-embed": "^7.1.0"
+    "vega-embed": "^7.1.0",
+    "vega-lite": "^6.4.3"
   },
   "directories": {
     "test": "tests"

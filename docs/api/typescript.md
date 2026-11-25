@@ -29,4 +29,6 @@ npm install @molcrafts/molplot
 
 ## Element
 
-`defineMolplotChart()`. `parseSpec` / `readSpec`. Attributes: `preset`, `theme`, `interactive`, `width`, `aspect`, `spec`. Events: `molplot:ready`, `molplot:error`.
+`defineMolplotChart()` registers the element. Use `parseSpec` and `readSpec` to read its specification. Attributes include `preset`, `theme`, `interactive`, `width`, `aspect`, `spec`, and `mode` (`readonly` by default or `edit`). The chart fills its host. It emits `molplot:ready` and `molplot:error`.
+
+The MolCrafts preview header from `@molcrafts/ui/preview` includes view controls and an export action. The action opens the shared image export dialog with manual cropping, automatic cropping to transparent margins, output dimensions, and PNG or vector SVG output. The MolPlot workbench downloads Matplotlib figures in the formats supplied by its Python backend, including PDF.

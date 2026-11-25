@@ -33,7 +33,10 @@ export interface EmbedResult {
     run(): unknown;
     /** Top-left of the plot rectangle within the rendered element. */
     origin(): number[];
-    signal(name: string): unknown;
+    signal(name: string, value?: unknown): unknown;
+    runAsync?(): Promise<unknown>;
+    toImageURL?(type: string, scaleFactor?: number): Promise<string>;
+    toSVG?(scaleFactor?: number): Promise<string>;
     /** Named scale: data value → plot-local pixel (undefined if missing). */
     scale(name: string): ((value: number) => number) | undefined;
     scenegraph(): { root: SceneItem };
@@ -105,6 +108,8 @@ export abstract class VegaChart {
   protected disposed = false;
   protected embed: VegaEmbed | null = null;
   protected result: EmbedResult | null = null;
+  /** The Vega-Lite spec of the last embed (what is on screen). */
+  protected lastSpec: VegaLiteSpec | null = null;
   protected readonly mountPromise: Promise<void>;
   private resizeObserver: ResizeObserver | null = null;
   private themeObserver: MutationObserver | null = null;
@@ -150,6 +155,49 @@ export abstract class VegaChart {
     style.boxSizing = "border-box";
     if (!style.minWidth) style.minWidth = "0";
     if (!style.minHeight) style.minHeight = "0";
+  }
+
+  /** The spec on screen, after presets and interaction were applied. */
+  get renderedSpec(): VegaLiteSpec | null {
+    return this.lastSpec;
+  }
+
+  /**
+   * Zoom every bound continuous axis about its centre. `factor` < 1 zooms
+   * in, > 1 zooms out. View state only; {@link resize} restores the spec.
+   */
+  async zoomBy(factor: number): Promise<void> {
+    await this.mountPromise;
+    const view = this.result?.view;
+    if (!view || !this.lastSpec || !(factor > 0)) return;
+    for (const param of zoomParamsOf(this.lastSpec)) {
+      for (const channel of param.select.encodings) {
+        const scale = view.scale(channel) as unknown as
+          | { domain?: () => unknown[] }
+          | undefined;
+        const domain = scale?.domain?.().map(Number);
+        if (!domain || domain.length < 2) continue;
+        const [lo, hi] = domain as [number, number];
+        if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue;
+        const centre = (lo + hi) / 2;
+        const half = ((hi - lo) / 2) * factor;
+        view.signal(`${param.name}_${channel}`, [centre - half, centre + half]);
+      }
+    }
+    await (view.runAsync?.() ?? view.run());
+  }
+
+  /** The chart as a PNG data URL (at `scale` × CSS pixels) or SVG markup. */
+  async exportImage(format: "png" | "svg", scale = 2): Promise<string> {
+    await this.mountPromise;
+    const view = this.result?.view;
+    if (!view) throw new Error("the chart has not rendered");
+    if (format === "svg") {
+      if (!view.toSVG) throw new Error("this Vega view cannot export SVG");
+      return view.toSVG();
+    }
+    if (!view.toImageURL) throw new Error("this Vega view cannot export PNG");
+    return view.toImageURL("png", scale);
   }
 
   /** Resolves once the initial render completes. */
@@ -226,6 +274,7 @@ export abstract class VegaChart {
     this.lastW = width;
     this.lastH = height;
     const spec = this.buildSpec(theme, { width, height });
+    this.lastSpec = spec;
     this.result?.view.finalize();
     this.result = null;
     this.rendered = null;
@@ -362,8 +411,20 @@ export abstract class VegaChart {
     await this.render();
   }
 
+  /**
+   * The box the chart must fill. Vega writes pixel sizes onto the embed
+   * node; measuring that node and feeding the new height back into the spec
+   * grows the chart forever. The layout surface is the parent the element
+   * sizes with CSS.
+   */
+  private layoutElement(): HTMLElement {
+    const parent = this.container.parentElement;
+    if (parent?.classList?.contains("molplot-chart__surface")) return parent;
+    return this.container;
+  }
+
   protected dims(): { width: number; height: number } {
-    const rect = this.container.getBoundingClientRect?.();
+    const rect = this.layoutElement().getBoundingClientRect?.();
     const width = Math.max(1, Math.round(rect?.width || 0) || 640);
     const height = Math.max(1, Math.round(rect?.height || 0) || 320);
     return { width, height };
@@ -397,7 +458,10 @@ export abstract class VegaChart {
         this.result?.view.resize().run();
       });
     });
-    this.resizeObserver.observe(this.container);
+    const target = this.layoutElement();
+    // Headless doubles are not Elements. A real surface always is.
+    if (typeof Element !== "undefined" && !(target instanceof Element)) return;
+    this.resizeObserver.observe(target);
   }
 
   private setupThemeObserver(): void {

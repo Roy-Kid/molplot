@@ -188,7 +188,8 @@ test("a delayed edit response cannot replace a newly selected figure", async ({
 test("the compact layout keeps both side panels usable on a narrow window", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  const narrowViewport = { width: 390, height: 844 };
+  await page.setViewportSize(narrowViewport);
   await page.goto("/");
   await expect(
     page
@@ -208,9 +209,10 @@ test("the compact layout keeps both side panels usable on a narrow window", asyn
       .getByRole("navigation", { name: "Figures", exact: true })
       .getByRole("button"),
   ).toHaveCount(3);
+  // The drawer covers the center and the opposite handle occupies the edge.
   await page
     .getByRole("button", { name: "Close side panel", exact: true })
-    .click();
+    .click({ position: { x: narrowViewport.width - 32, y: 80 } });
   await page
     .getByRole("button", { name: "Open right panel", exact: true })
     .click();

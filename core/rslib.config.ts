@@ -33,9 +33,13 @@ export default defineConfig({
       autoExternal: false,
       source: {
         entry: { elements: "./src/element_entry.ts" },
+        // A browser bundle: React (the preview header) reads NODE_ENV, and
+        // there is no `process` in a page.
+        define: { "process.env.NODE_ENV": JSON.stringify("production") },
       },
       output: {
         target: "web",
+        minify: true,
       },
     },
   ],

@@ -2,6 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
+    "types": ["@rsbuild/core/types"],
     "paths": {
       "@molcrafts/molplot": ["./src/index.ts"],
       "@molcrafts/molplot/*": ["./src/*"]

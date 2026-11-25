@@ -3,6 +3,7 @@ import type {
   Command,
   RenderResult,
 } from "@molcrafts/molplot/semantic";
+import { downloadUrl } from "@molcrafts/ui-web-components/save-file";
 
 export type ExportFormat = "pdf" | "svg" | "png";
 
@@ -194,11 +195,5 @@ export function downloadExport(
   stem: string,
   figureId?: string,
 ): void {
-  const link = document.createElement("a");
-  link.href = exportUrl(fmt, revision, true, figureId);
-  link.download = `${stem}.${fmt}`;
-  link.rel = "noopener";
-  document.body.append(link);
-  link.click();
-  link.remove();
+  downloadUrl(exportUrl(fmt, revision, true, figureId), `${stem}.${fmt}`);
 }

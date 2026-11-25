@@ -1,7 +1,6 @@
 import { DiamondRegular, ImageMultipleRegular } from "@fluentui/react-icons";
-import { Tabs, TabsContent } from "@molcrafts/ui";
+import { IconTabStrip, Tabs, TabsContent } from "@molcrafts/ui";
 import type { JSX } from "react";
-import { PanelTabStrip } from "@/components/blocks/panel-tab-strip";
 import { ElementsPanel } from "@/components/workbench/ElementsPanel";
 import { exportUrl, type FigureItem, type HostResult } from "@/lib/host";
 import { cn } from "@/lib/utils";
@@ -34,7 +33,8 @@ export function LeftRail({
       className="flex h-full min-h-0 flex-col gap-0"
     >
       <div className="flex h-9 shrink-0 items-center border-b border-border">
-        <PanelTabStrip
+        <IconTabStrip
+          showLabels
           label="Figure navigation"
           items={[
             {
